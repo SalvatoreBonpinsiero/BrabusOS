@@ -1,0 +1,121 @@
+name: Build BrabusOS Full Linux Distro
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt update
+          sudo apt install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools isolinux
+
+      - name: Bootstrap Ubuntu Base System
+        run: |
+          sudo debootstrap --arch=amd64 noble chroot http://archive.ubuntu.com/ubuntu/
+
+      - name: Configure BrabusOS RootFS
+        run: |
+          sudo mount --bind /dev chroot/dev
+          sudo mount --bind /proc chroot/proc
+          sudo mount --bind /sys chroot/sys
+
+          cat << 'EOF' | sudo chroot chroot /bin/bash
+          export DEBIAN_FRONTEND=noninteractive
+          echo "brabus-os" > /etc/hostname
+
+          cat << 'APT_SOURCES' > /etc/apt/sources.list
+          deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
+          deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
+          deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
+          APT_SOURCES
+
+          apt update
+          apt install -y --no-install-recommends \
+            linux-image-generic \
+            live-boot \
+            systemd-sysv \
+            xorg \
+            openbox \
+            tint2 \
+            chromium-browser \
+            xterm \
+            network-manager \
+            pulseaudio \
+            pciutils \
+            curl \
+            sudo
+
+          useradd -m -s /bin/bash brabus
+          echo "brabus:brabus" | chpasswd
+          usermod -aG sudo,video,audio brabus
+          echo "brabus ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/brabus
+
+          cat << 'SERVICE' > /etc/systemd/system/x11-autologin.service
+          [Unit]
+          After=systemd-user-sessions.service
+
+          [Service]
+          ExecStart=/usr/bin/xinit /usr/local/bin/brabus-session -- :0 vt7
+          User=brabus
+          StandardInput=tty
+          StandardOutput=journal
+
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+          systemctl enable x11-autologin.service
+
+          cat << 'SESSION' > /usr/local/bin/brabus-session
+          #!/bin/bash
+          tint2 &
+          xsetroot -solid "#300A24"
+          chromium-browser --start-maximized --no-first-run --no-sandbox "https://google.com" &
+          xterm -geometry 60x20+50+50 -title "Brabus Terminal" -e "echo 'BrabusOS Linux Kernel Ready'; /bin/bash" &
+          exec openbox
+          SESSION
+          chmod +x /usr/local/bin/brabus-session
+
+          apt clean
+          rm -rf /tmp/* /var/lib/apt/lists/*
+          EOF
+
+          sudo umount chroot/sys
+          sudo umount chroot/proc
+          sudo umount chroot/dev
+
+      - name: Package SquashFS & Build Bootable ISO
+        run: |
+          mkdir -p iso_build/live iso_build/boot/grub
+          sudo mksquashfs chroot iso_build/live/filesystem.squashfs -comp xz
+          sudo cp chroot/boot/vmlinuz-* iso_build/boot/vmlinuz
+          sudo cp chroot/boot/initrd.img-* iso_build/boot/initrd
+
+          cat << 'EOF' > iso_build/boot/grub/grub.cfg
+          set default=0
+          set timeout=2
+
+          insmod efi_gop
+          insmod font
+          set gfxmode=auto
+
+          menuentry "BrabusOS Desktop" {
+              linux /boot/vmlinuz boot=live quiet splash
+              initrd /boot/initrd
+          }
+          EOF
+
+          grub-mkrescue -o brabus_linux.iso iso_build
+
+      - name: Upload Linux Distro ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: brabus_linux_distro
+          path: brabus_linux.iso
