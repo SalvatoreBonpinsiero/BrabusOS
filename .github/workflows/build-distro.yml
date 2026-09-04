@@ -19,7 +19,7 @@ jobs:
 
       - name: Bootstrap Ubuntu Base System
         run: |
-          sudo debootstrap --arch=amd64 noble chroot [http://archive.ubuntu.com/ubuntu/](http://archive.ubuntu.com/ubuntu/)
+          sudo debootstrap --arch=amd64 noble chroot http://archive.ubuntu.com/ubuntu/
 
       - name: Configure BrabusOS RootFS
         run: |
@@ -32,9 +32,9 @@ jobs:
           echo "brabus-os" > /etc/hostname
 
           cat << 'APT_SOURCES' > /etc/apt/sources.list
-          deb [http://archive.ubuntu.com/ubuntu/](http://archive.ubuntu.com/ubuntu/) noble main restricted universe multiverse
-          deb [http://archive.ubuntu.com/ubuntu/](http://archive.ubuntu.com/ubuntu/) noble-updates main restricted universe multiverse
-          deb [http://security.ubuntu.com/ubuntu/](http://security.ubuntu.com/ubuntu/) noble-security main restricted universe multiverse
+          deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
+          deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
+          deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
           APT_SOURCES
 
           apt update
@@ -77,8 +77,8 @@ jobs:
           #!/bin/bash
           tint2 &
           xsetroot -solid "#300A24"
-          chromium-browser --start-maximized --no-first-run --no-sandbox "[https://google.com](https://google.com)" &
-          xterm -geometry 60x20+50+50 -title "Brabus Terminal" -e "echo 'BrabusOS Linux Kernel Ready'; /bin/bash" &
+          chromium-browser --start-maximized --no-first-run --no-sandbox "https://google.com" &
+          xterm -geometry 80x24+60+60 -title "Brabus Terminal" -e "echo '=== BrabusOS Desktop Ready ==='; /bin/bash" &
           exec openbox
           SESSION
           chmod +x /usr/local/bin/brabus-session
