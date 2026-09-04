@@ -94,7 +94,9 @@ jobs:
       - name: Package SquashFS & Build Bootable ISO
         run: |
           mkdir -p iso_build/live iso_build/boot/grub
+
           sudo mksquashfs chroot iso_build/live/filesystem.squashfs -comp xz
+
           sudo cp chroot/boot/vmlinuz-* iso_build/boot/vmlinuz
           sudo cp chroot/boot/initrd.img-* iso_build/boot/initrd
 
@@ -112,7 +114,8 @@ jobs:
           }
           EOF
 
-          grub-mkrescue -o brabus_linux.iso iso_build
+          sudo chmod -R ugo+rX iso_build
+          sudo grub-mkrescue -o brabus_linux.iso iso_build
 
       - name: Upload Linux Distro ISO
         uses: actions/upload-artifact@v4
