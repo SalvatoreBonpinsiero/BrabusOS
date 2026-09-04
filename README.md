@@ -1,13 +1,12 @@
 # <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Linux-Dark.svg" width="38" height="38" valign="middle"/> BrabusOS Desktop (Pasito Linux Edition)
 
 <p align="left">
-  <img src="https://img.shields.io/badge/OS-Ubuntu_24.04_LTS-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" />
-  <img src="https://img.shields.io/badge/Kernel-Linux_Generic-FCC624?style=for-the-badge&logo=linux&logoColor=black" />
-  <img src="https://img.shields.io/badge/Browser-Chromium-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" />
-  <img src="https://img.shields.io/badge/Build-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
-  <img src="https://img.shields.io/badge/Hardware-Smoant_Pasito-orange?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white&style=flat-square" />
+  <img src="https://img.shields.io/badge/Kernel-Linux_6.x-FCC624?logo=linux&logoColor=black&style=flat-square" />
+  <img src="https://img.shields.io/badge/Browser-Chromium-4285F4?logo=google-chrome&logoColor=white&style=flat-square" />
+  <img src="https://img.shields.io/badge/Build-GitHub_Actions-2088FF?logo=github-actions&logoColor=white&style=flat-square" />
+  <img src="https://img.shields.io/badge/Hardware-Smoant_Pasito_3-300A24?style=flat-square" />
 </p>
-
 ---
 
 ## <img src="https://api.iconify.design/octicon:info-16.svg?color=%23E95420" width="20" height="20" valign="middle"/> Описание проекта
