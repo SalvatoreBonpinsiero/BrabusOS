@@ -15,7 +15,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools isolinux
+          sudo apt install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools isolinux gcc
 
       - name: Bootstrap Ubuntu Base System
         run: |
@@ -43,6 +43,7 @@ jobs:
             live-boot \
             systemd-sysv \
             xorg \
+            x11-xserver-utils \
             openbox \
             tint2 \
             chromium-browser \
@@ -51,19 +52,88 @@ jobs:
             pulseaudio \
             pciutils \
             curl \
-            sudo
+            sudo \
+            gcc \
+            libc6-dev
 
           useradd -m -s /bin/bash brabus
           echo "brabus:brabus" | chpasswd
           usermod -aG sudo,video,audio brabus
           echo "brabus ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/brabus
 
+          mkdir -p /etc/xdg/openbox /etc/xdg/tint2
+
+          cat << 'RC_XML' > /etc/xdg/openbox/rc.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <openbox_config xmlns="http://openbox.org/3.4/rc">
+            <theme>
+              <name>Clearlooks</name>
+              <titleLayout>NLIMC</titleLayout>
+            </theme>
+          </openbox_config>
+          RC_XML
+
+          cat << 'TINT2_CONF' > /etc/xdg/tint2/tint2rc
+          panel_items = LTS
+          panel_size = 100% 36
+          panel_margin = 0 0
+          panel_padding = 4 2 4
+          panel_background_id = 1
+          panel_position = bottom center horizontal
+          panel_layer = top
+          rounded = 0
+          border_width = 2
+          background_color = #E95420 100
+          border_color = #FF7733 100
+
+          task_text = 1
+          task_width = 160
+          task_margin = 2 2
+          task_padding = 4 2
+          task_font_color = #000000 100
+          task_active_font_color = #FFFFFF 100
+          task_background_id = 2
+          task_active_background_id = 3
+
+          background_color = #FF6F00 100
+          border_color = #FFA040 100
+          background_color = #B33D00 100
+          border_color = #FF8844 100
+
+          time1_format = %H:%M
+          time1_font = Sans Bold 10
+          clock_font_color = #000000 100
+          clock_padding = 8 2
+          clock_background_id = 0
+          TINT2_CONF
+
+          cat << 'INIT_C' > /usr/local/bin/brabus-init.c
+          #include <stdlib.h>
+          #include <unistd.h>
+          #include <sys/types.h>
+
+          int main(void) {
+              setuid(0);
+              system("xrandr -s 1024x768 || true");
+              system("xsetroot -solid '#E95420'");
+              system("tint2 &");
+              system("xterm -geometry 80x24+40+40 -bg '#FF5500' -fg '#FFFFFF' -title 'BRABUS TERMINAL' -e '/bin/bash' &");
+              system("chromium-browser --start-maximized --no-first-run --no-sandbox 'data:text/html,<html style=\"background:%23E95420;color:white;font-family:sans-serif;text-align:center;padding-top:100px;\"><h1>BRABUS OS</h1><p>ALL-ORANGE DESKTOP ENVIRONMENT</p></html>' &");
+              system("exec openbox");
+              return 0;
+          }
+          INIT_C
+
+          gcc -O2 /usr/local/bin/brabus-init.c -o /usr/local/bin/brabus-init
+          chmod 4755 /usr/local/bin/brabus-init
+          rm /usr/local/bin/brabus-init.c
+
           cat << 'SERVICE' > /etc/systemd/system/x11-autologin.service
           [Unit]
           After=systemd-user-sessions.service
 
           [Service]
-          ExecStart=/usr/bin/xinit /usr/local/bin/brabus-session -- :0 vt7
+          ExecStart=/usr/bin/xinit /usr/local/bin/brabus-init -- :0 vt7
           User=brabus
           StandardInput=tty
           StandardOutput=journal
@@ -71,17 +141,8 @@ jobs:
           [Install]
           WantedBy=multi-user.target
           SERVICE
-          systemctl enable x11-autologin.service
 
-          cat << 'SESSION' > /usr/local/bin/brabus-session
-          #!/bin/bash
-          tint2 &
-          xsetroot -solid "#300A24"
-          chromium-browser --start-maximized --no-first-run --no-sandbox "https://google.com" &
-          xterm -geometry 80x24+60+60 -title "Brabus Terminal" -e "echo '=== BrabusOS Desktop Ready ==='; /bin/bash" &
-          exec openbox
-          SESSION
-          chmod +x /usr/local/bin/brabus-session
+          systemctl enable x11-autologin.service
 
           apt clean
           rm -rf /tmp/* /var/lib/apt/lists/*
@@ -94,21 +155,19 @@ jobs:
       - name: Package SquashFS & Build Bootable ISO
         run: |
           mkdir -p iso_build/live iso_build/boot/grub
-
           sudo mksquashfs chroot iso_build/live/filesystem.squashfs -comp xz
-
           sudo cp chroot/boot/vmlinuz-* iso_build/boot/vmlinuz
           sudo cp chroot/boot/initrd.img-* iso_build/boot/initrd
 
           cat << 'EOF' > iso_build/boot/grub/grub.cfg
           set default=0
-          set timeout=2
+          set timeout=1
 
           insmod efi_gop
           insmod font
           set gfxmode=auto
 
-          menuentry "BrabusOS Desktop" {
+          menuentry "BrabusOS All-Orange Desktop" {
               linux /boot/vmlinuz boot=live quiet splash
               initrd /boot/initrd
           }
@@ -120,5 +179,5 @@ jobs:
       - name: Upload Linux Distro ISO
         uses: actions/upload-artifact@v4
         with:
-          name: brabus_linux_distro
+          name: brabus_linux_orange_distro
           path: brabus_linux.iso
