@@ -5,7 +5,6 @@
   <img src="https://img.shields.io/badge/Kernel-Linux_6.x-FCC624?logo=linux&logoColor=black&style=flat-square" />
   <img src="https://img.shields.io/badge/Browser-Chromium-4285F4?logo=google-chrome&logoColor=white&style=flat-square" />
   <img src="https://img.shields.io/badge/Build-GitHub_Actions-2088FF?logo=github-actions&logoColor=white&style=flat-square" />
-  <img src="https://img.shields.io/badge/Hardware-Smoant_Pasito_3-300A24?style=flat-square" />
 </p>
 ---
 
